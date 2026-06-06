@@ -1,11 +1,16 @@
 name: ci
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "7 0 * * *"
+    - cron: "23 3 * * *"
+    - cron: "41 6 * * *"
+    - cron: "13 9 * * *"
+    - cron: "52 12 * * *"
+    - cron: "18 15 * * *"
+    - cron: "37 18 * * *"
+    - cron: "4 21 * * *"
 
 jobs:
   autogreen:
@@ -16,13 +21,31 @@ jobs:
   
     steps:
       - name: Clone repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Auto green
         run: |
+          CHANCE=35
+          MAX_DELAY_SECONDS=3000
+
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            delay=$(( RANDOM % (MAX_DELAY_SECONDS + 1) ))
+            roll=$(( RANDOM % 100 ))
+
+            echo "Waiting ${delay}s before deciding whether to commit."
+            sleep "${delay}"
+
+            if [ "${roll}" -ge "${CHANCE}" ]; then
+              echo "Skipped this run. Roll=${roll}, chance=${CHANCE}%."
+              exit 0
+            fi
+
+            echo "Committing this run. Roll=${roll}, chance=${CHANCE}%."
+          fi
+
           git config --local user.email "hezhaoqian1@gmail.com"
           git config --local user.name "wind-up-bird"
           git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git pull --rebase
-          git commit --allow-empty -m "a commit a day keeps your girlfriend away"
+          git commit --allow-empty -m "keep it green"
           git push
